@@ -2,6 +2,9 @@ package model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -120,7 +123,7 @@ public class GitLabIssue {
      * @return the string timestamp of the close date.
      */
 
-    public String getCloseDate() {
+    public String getCloseDateString() {
         return closeDate;
     }
 
@@ -178,11 +181,32 @@ public class GitLabIssue {
         return issueType;
     }
 
+    /**
+     *
+     * @return
+     */
+
     public Boolean isClosed() {
         if (state == null) {
             return false;
         }
-
         return this.state.toLowerCase().trim().equals("closed".toLowerCase().trim());
+    }
+
+    public Date getCloseDate() {
+        if (this.closeDate == null || this.closeDate.isEmpty()) {
+            return null;
+        }
+        return dateFromString(this.closeDate);
+    }
+
+    private Date dateFromString(String s) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            return dateFormat.parse(s);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

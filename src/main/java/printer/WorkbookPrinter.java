@@ -5,7 +5,9 @@ import model.Milestone;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.jfree.chart.ChartUtils;
 import org.jfree.chart.JFreeChart;
 
@@ -15,6 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+/**
+ * The Printer class that produces a populated
+ * {@link Workbook}.
+ */
 
 public class WorkbookPrinter {
 
@@ -32,6 +39,11 @@ public class WorkbookPrinter {
     private Double totalCompletedPoints;
     private Double totalCommittedPoints;
 
+    /**
+     * Instantiates a new WorkbookPrinter with the given {@link Workbook}.
+     * @param workbook the Workbook to be populated.
+     */
+
     public WorkbookPrinter(Workbook workbook) {
         this.workbook = workbook;
         this.pointsByPlatformMap = new HashMap<String, Double>();
@@ -41,11 +53,21 @@ public class WorkbookPrinter {
         this.totalCompletedPoints = 0.0;
     }
 
+    /**
+     * Prints every {@link Milestone}, each within its own {@link Sheet}.
+     * @param milestones the milestones to be printed.
+     */
+
     public void printMilestones(List<Milestone> milestones) {
         for (Milestone milestone : milestones) {
             workbook.createSheet(milestone.getTitle());
         }
     }
+
+    /**
+     * Prints the header row for the {@link Milestone} provided.
+     * @param milestone the milestone, used to find which sheet to print the headers for.
+     */
 
     public void printMilestoneHeader(Milestone milestone) {
         Sheet sheet = workbook.getSheet(milestone.getTitle());
@@ -57,6 +79,11 @@ public class WorkbookPrinter {
         headerRow.createCell(ISSUE_TYPE_CELL_POSITION).setCellValue("Issue Type");
         headerRow.createCell(URL_CELL_POSITION).setCellValue("Issue URL");
     }
+
+    /**
+     * Prints every issue into a {@link Row} within a {@link Workbook}.
+     * @param issues the issues to be printed.
+     */
 
     public void printIssues(List<GitLabIssue> issues) {
         this.pointsByPlatformMap = new HashMap<String, Double>();
@@ -100,18 +127,20 @@ public class WorkbookPrinter {
         Cell platformCell = row.createCell(PLATFORM_CELL_POSITION);
         platformCell.setCellValue(issue.getPlatform());
 
-        Double platformPoints = pointsByPlatformMap.get(issue.getPlatform());
-        Double points;
-        if (issue.getDescription() != null) {
-            points = extractPointValue(issue);
-        } else {
-            points = 0.0;
-        }
-        if (platformPoints != null) {
-            platformPoints += points;
-            pointsByPlatformMap.put(issue.getPlatform(), platformPoints);
-        } else {
-            pointsByPlatformMap.put(issue.getPlatform(), points);
+        if(issue.isClosed()) {
+            Double platformPoints = pointsByPlatformMap.get(issue.getPlatform());
+            Double points;
+            if (issue.getDescription() != null) {
+                points = extractPointValue(issue);
+            } else {
+                points = 0.0;
+            }
+            if (platformPoints != null) {
+                platformPoints += points;
+                pointsByPlatformMap.put(issue.getPlatform(), platformPoints);
+            } else {
+                pointsByPlatformMap.put(issue.getPlatform(), points);
+            }
         }
     }
 
@@ -120,18 +149,20 @@ public class WorkbookPrinter {
         Cell priorityCell = row.createCell(PRIORITY_CELL_POSITION);
         priorityCell.setCellValue(priority);
 
-        Double priorityPoints = pointsByPriorityMap.get(priority);
-        Double points;
-        if (issue.getDescription() != null) {
-            points = extractPointValue(issue);
-        } else {
-            points = 0.0;
-        }
-        if(priorityPoints != null) {
-            priorityPoints += points;
-            pointsByPriorityMap.put(priority, priorityPoints);
-        } else {
-            pointsByPriorityMap.put(priority, points);
+        if(issue.isClosed()) {
+            Double priorityPoints = pointsByPriorityMap.get(priority);
+            Double points;
+            if (issue.getDescription() != null) {
+                points = extractPointValue(issue);
+            } else {
+                points = 0.0;
+            }
+            if (priorityPoints != null) {
+                priorityPoints += points;
+                pointsByPriorityMap.put(priority, priorityPoints);
+            } else {
+                pointsByPriorityMap.put(priority, points);
+            }
         }
     }
 
@@ -140,18 +171,21 @@ public class WorkbookPrinter {
         Cell issueCell = row.createCell(ISSUE_TYPE_CELL_POSITION);
         issueCell.setCellValue(issueType);
 
-        Double issueTypePoints = pointsByIssueTypeMap.get(issueType);
-        Double points;
-        if (issue.getDescription() != null) {
-            points = extractPointValue(issue);
-        } else {
-            points = 0.0;
-        }
-        if (issueTypePoints != null) {
-            issueTypePoints += points;
-            pointsByIssueTypeMap.put(issueType, issueTypePoints);
-        } else {
-            pointsByIssueTypeMap.put(issueType, points);
+
+        if(issue.isClosed()) {
+            Double issueTypePoints = pointsByIssueTypeMap.get(issueType);
+            Double points;
+            if (issue.getDescription() != null) {
+                points = extractPointValue(issue);
+            } else {
+                points = 0.0;
+            }
+            if (issueTypePoints != null) {
+                issueTypePoints += points;
+                pointsByIssueTypeMap.put(issueType, issueTypePoints);
+            } else {
+                pointsByIssueTypeMap.put(issueType, points);
+            }
         }
     }
 
@@ -162,13 +196,17 @@ public class WorkbookPrinter {
         hyperlinkFont.setUnderline(XSSFFont.U_SINGLE);
         hyperlinkFont.setColor(HSSFColor.HSSFColorPredefined.BLUE.getIndex());
         hlinkstyle.setFont(hyperlinkFont);
-        XSSFHyperlink link = (XSSFHyperlink)helper.createHyperlink(HyperlinkType.URL);
+        XSSFHyperlink link = (XSSFHyperlink) helper.createHyperlink(HyperlinkType.URL);
         link.setAddress(issue.getUrl());
         Cell urlCell = row.createCell(URL_CELL_POSITION);
         urlCell.setCellValue(issue.getUrl());
         urlCell.setCellStyle(hlinkstyle);
         urlCell.setHyperlink(link);
     }
+
+    /**
+     * Saves the {@link Workbook} to the build directory.
+     */
 
     public void writeWorkbook() {
         File file = new File("target/report.xlsx");
@@ -195,6 +233,12 @@ public class WorkbookPrinter {
         }
         return points;
     }
+
+    /**
+     * Prints the Milestone (Sprint) Summary.
+     * @param milestone the milestone to be summarized.
+     * @param issues the issues within the Milestone.
+     */
 
     public void printSummary(Milestone milestone, List<GitLabIssue> issues) {
         Sheet sheet = workbook.getSheet(milestone.getTitle());

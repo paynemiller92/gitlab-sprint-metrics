@@ -8,8 +8,21 @@ import org.jfree.data.general.DefaultPieDataset;
 
 import java.util.Map;
 
-public class ChartPrinter {
-    public static JFreeChart createPieChart(Map<String, Double> map, String title) {
+/**
+ * The Printer class that prints {@link JFreeChart} objects from given Data Sets,
+ * which are typically {@link Map} objects.
+ */
+
+class ChartPrinter {
+
+    /**
+     * Produces a Pie Chart with the given title from the given input.
+     * @param map The Data Set used to populate the chart.
+     * @param title The title of the chart.
+     * @return the chart to be printed.
+     */
+
+    static JFreeChart createPieChart(Map<String, Double> map, String title) {
         DefaultPieDataset dataset = new DefaultPieDataset();
         for (Map.Entry<String, Double> entry : map.entrySet()) {
             dataset.setValue(entry.getKey(), entry.getValue());
@@ -17,7 +30,15 @@ public class ChartPrinter {
         return ChartFactory.createPieChart(title, dataset, true, true, false);
     }
 
-    public static JFreeChart createBarChart(Map<String, Double> map, String title, String columnName) {
+    /**
+     * Produces a Bar Chart with the given title and column name from the given Data Set.
+     * @param map The Data Set used to populate the chart.
+     * @param title The title of the chart.
+     * @param columnName the column name.
+     * @return the chart to be printed.
+     */
+
+    static JFreeChart createBarChart(Map<String, Double> map, String title, String columnName) {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         for (Map.Entry<String, Double> entry : map.entrySet()) {
             dataset.setValue(entry.getValue(), entry.getKey(), "Points");
